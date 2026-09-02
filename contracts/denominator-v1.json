@@ -1,0 +1,45 @@
+{
+  "schema": "gooo/closed-loop-self-improvement-usecase/denominator/v1",
+  "id": "feedback-coverage-decision-loop-v1",
+  "fixed": true,
+  "denominator": 12,
+  "activity_count": 12,
+  "resolution_precedence": ["REFUTED", "UNKNOWN", "CLOSED"],
+  "unknown_fields": ["stage", "step", "reason", "unknown_class", "next_operation", "blocked_by"],
+  "proof_distribution": {"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4},
+  "indicator_distribution": {"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4},
+  "runtime_contract": {
+    "repository_writes": 0,
+    "local_test_executions": 0,
+    "cross_project_required_gates": 0,
+    "output_boundary": "caller-owned-temp-only"
+  },
+  "activities": [
+    {"ordinal": 1, "id": "PIN_BASELINE_BEHAVIOR", "stage": "FOUNDATION", "step": "pin-baseline", "proof_choice": "FOUNDATION", "indicator_class": "DRIVER"},
+    {"ordinal": 2, "id": "DECLARE_FAIL_CLOSED_DECISION", "stage": "FOUNDATION", "step": "declare-fail-closed-decision", "proof_choice": "FOUNDATION", "indicator_class": "OUTCOME"},
+    {"ordinal": 3, "id": "DECLARE_UNKNOWN_RECORD", "stage": "FOUNDATION", "step": "declare-six-field-unknown-record", "proof_choice": "FOUNDATION", "indicator_class": "GUARDRAIL"},
+    {"ordinal": 4, "id": "DECLARE_CALLER_OUTPUT_BOUNDARY", "stage": "FOUNDATION", "step": "declare-caller-output-boundary", "proof_choice": "FOUNDATION", "indicator_class": "DRIVER"},
+    {"ordinal": 5, "id": "GENERATE_SEMANTIC_IR", "stage": "COHERENCE", "step": "generate-semantic-ir", "proof_choice": "COHERENCE", "indicator_class": "DRIVER"},
+    {"ordinal": 6, "id": "GENERATE_BASELINE_ARTIFACT", "stage": "COHERENCE", "step": "generate-pinned-baseline", "proof_choice": "COHERENCE", "indicator_class": "OUTCOME"},
+    {"ordinal": 7, "id": "GENERATE_CANDIDATE_ARTIFACT", "stage": "COHERENCE", "step": "generate-fail-closed-candidate", "proof_choice": "COHERENCE", "indicator_class": "GUARDRAIL"},
+    {"ordinal": 8, "id": "COMPARE_IDENTICAL_CONTEXT", "stage": "COHERENCE", "step": "compare-identical-context", "proof_choice": "COHERENCE", "indicator_class": "DRIVER"},
+    {"ordinal": 9, "id": "MINIMIZE_COUNTEREXAMPLE", "stage": "REGRESSION", "step": "minimize-unknown-top-level-counterexample", "proof_choice": "REGRESSION", "indicator_class": "OUTCOME"},
+    {"ordinal": 10, "id": "REPLAY_CANDIDATE_OUTPUT", "stage": "REGRESSION", "step": "replay-candidate-output", "proof_choice": "REGRESSION", "indicator_class": "GUARDRAIL"},
+    {"ordinal": 11, "id": "VERIFY_ZERO_AUTHORITY", "stage": "REGRESSION", "step": "verify-zero-runtime-authority", "proof_choice": "REGRESSION", "indicator_class": "OUTCOME"},
+    {"ordinal": 12, "id": "REQUIRE_HUMAN_ADOPTION", "stage": "REGRESSION", "step": "hold-human-adoption-boundary", "proof_choice": "REGRESSION", "indicator_class": "GUARDRAIL"}
+  ],
+  "cases": [
+    {"ordinal": 1, "id": "C01-EXPLICIT-FIXED-POINT", "fixture": "fixtures/explicit-fixed-point.json", "expected": "CLOSED"},
+    {"ordinal": 2, "id": "C02-UNKNOWN-TOP-LEVEL", "fixture": "fixtures/unknown-top-level.json", "expected": "UNKNOWN"},
+    {"ordinal": 3, "id": "C03-EMPTY-TOP-LEVEL", "fixture": "fixtures/empty-top-level.json", "expected": "UNKNOWN"},
+    {"ordinal": 4, "id": "C04-LOWERCASE-FIXED-POINT", "fixture": "fixtures/lowercase-fixed-point.json", "expected": "UNKNOWN"},
+    {"ordinal": 5, "id": "C05-NULL-TOP-LEVEL", "fixture": "fixtures/null-top-level.json", "expected": "REFUTED"},
+    {"ordinal": 6, "id": "C06-MISSING-TOP-LEVEL", "fixture": "fixtures/missing-top-level.json", "expected": "REFUTED"},
+    {"ordinal": 7, "id": "C07-NUMERIC-TOP-LEVEL", "fixture": "fixtures/numeric-top-level.json", "expected": "REFUTED"},
+    {"ordinal": 8, "id": "C08-EXPLICIT-WITH-METADATA", "fixture": "fixtures/explicit-with-metadata.json", "expected": "CLOSED"},
+    {"ordinal": 9, "id": "C09-PREFIX-NOT-FIXED", "fixture": "fixtures/prefix-not-fixed.json", "expected": "UNKNOWN"},
+    {"ordinal": 10, "id": "C10-EXPLICIT-WITH-REQUEST", "fixture": "fixtures/explicit-with-request.json", "expected": "CLOSED"},
+    {"ordinal": 11, "id": "C11-EXPLICIT-WITH-METADATA", "fixture": "fixtures/explicit-with-metadata.json", "expected": "CLOSED"},
+    {"ordinal": 12, "id": "C12-ARRAY-TOP-LEVEL", "fixture": "fixtures/array-top-level.json", "expected": "REFUTED"}
+  ]
+}

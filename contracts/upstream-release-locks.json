@@ -1,0 +1,66 @@
+{
+  "schema": "gooo/closed-loop-self-improvement-usecase/upstream-locks/v1",
+  "optional": true,
+  "integration": "metadata-and-digest-verification-only",
+  "composition_boundary": {
+    "status": "UNKNOWN",
+    "stage": "UPSTREAM_INPUT_BOUNDARY",
+    "step": "compose-released-mechanism-formats",
+    "reason": "RELEASED_FORMATS_ARE_VERIFIED_BUT_NOT_COMPOSED_IN_THIS_SMALL_FIXTURE",
+    "unknown_class": "UNCOMPOSED_OPTIONAL_RELEASE_INPUT",
+    "next_operation": "DEFINE_A_VERSIONED_COMPOSITION_ADAPTER",
+    "blocked_by": ["FORMAT_ADAPTER_NOT_DECLARED"]
+  },
+  "releases": [
+    {
+      "key": "BOUNDED_SELF_CHANGE_COMPILER",
+      "repository": "kimjooyoon/gooo-bounded-self-change-compiler",
+      "tag": "v0.2.1",
+      "release_id": 380886826,
+      "immutable": true,
+      "tag_object_sha": "8b5d6b5293d85f54c90a9217c485f219f9d778ee",
+      "target_sha": "1162d3a9de043564bf8002fa441f99996069cb43",
+      "asset": {"id": 540290070, "name": "gooo-bounded-self-change-compiler-v0.2.1-ci-evidence.tar.gz", "size_bytes": 17923, "digest": "sha256:da4793a5e5a669952faf5289ce5aa90e7307bd158b1d5e4593621bc3b1ab77e1"}
+    },
+    {
+      "key": "CAUSAL_COUNTEREXAMPLE_REDUCER",
+      "repository": "kimjooyoon/gooo-causal-counterexample-reducer",
+      "tag": "v0.1.1",
+      "release_id": 380886153,
+      "immutable": true,
+      "tag_object_sha": "72d2160945daf959d98404ebe5a454adc69ad9ab",
+      "target_sha": "f98d7b7ad88d4190e103e2202a696dd6e6e3928d",
+      "asset": {"id": 540288031, "name": "conformance-report.json", "size_bytes": 9354, "digest": "sha256:4b920fd4c85c34cf31ebb2e67a38b6eb34c845379838849ba5ce20b67ab596b4"}
+    },
+    {
+      "key": "BOUNDED_OBSERVATIONAL_EQUIVALENCE_PROJECTOR",
+      "repository": "kimjooyoon/gooo-bounded-observational-equivalence-projector",
+      "tag": "v0.1.2",
+      "release_id": 380897010,
+      "immutable": true,
+      "tag_object_sha": "6a605cd4d123f5eebee254850715a92922edda0d",
+      "target_sha": "95b544d438a71e31511c12b4e9c9cd848f1f8091",
+      "asset": {"id": 540332168, "name": "gooo-bounded-observational-equivalence-evidence-v0.1.2.tar.gz", "size_bytes": 2624296, "digest": "sha256:738165e9d6cc423e8944aa63048ec5f00e22008be9c2a03e3c2abe84882ce365"}
+    },
+    {
+      "key": "SEMANTIC_WAVE_MERGE_PROJECTOR",
+      "repository": "kimjooyoon/gooo-semantic-wave-merge-projector",
+      "tag": "v0.1.3",
+      "release_id": 380905719,
+      "immutable": true,
+      "tag_object_sha": "3c795b9577e3fe8050601c40896e2f247074fb90",
+      "target_sha": "d1abdcba2e72ca8aaf2992887ede753884b88c7f",
+      "asset": {"id": 540372611, "name": "gooo-semantic-wave-merge-projector-v0.1.3.tar.gz", "size_bytes": 6190, "digest": "sha256:fe55255e0337c8625f4c1fee42608fbcea20b3057f05a4f5370617147abf1744"}
+    },
+    {
+      "key": "SELF_IMPROVEMENT_LEDGER",
+      "repository": "kimjooyoon/gooo-self-improvement-ledger",
+      "tag": "v0.51.0",
+      "release_id": 380894827,
+      "immutable": true,
+      "tag_object_sha": "72e10b201780fa40825e3846a1363cb721918a75",
+      "target_sha": "70ae4252312e3c39d873762bece4b3c40d60bb1b",
+      "asset": {"id": 540322888, "name": "gooo-self-improvement-ledger-70ae4252312e3c39d873762bece4b3c40d60bb1b", "size_bytes": 55473731, "digest": "sha256:565adc039ee9db092775d2abe309a3341a94ee589414c0368857711c8e0e60f9"}
+    }
+  ]
+}

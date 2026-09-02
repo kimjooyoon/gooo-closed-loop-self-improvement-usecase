@@ -1,0 +1,133 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Immutable annotated release tag
+        required: true
+        default: v0.1.0
+      expected_main_sha:
+        description: Merge commit whose successful main CI is required
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  draft-first-publish:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out the exact merged main revision
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.expected_main_sha }}
+
+      - name: Install Go 1.27.x
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.x'
+          cache: true
+
+      - name: Prepare caller-owned temporary output
+        run: echo "OUTPUT_DIR=$RUNNER_TEMP/gooo-release-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
+
+      - name: Require successful main CI for this exact commit
+        run: |
+          checked_out_sha="$(git rev-parse HEAD)"
+          test "$checked_out_sha" = "$EXPECTED_MAIN_SHA"
+          echo "GITHUB_SHA=$checked_out_sha" >> "$GITHUB_ENV"
+          main_run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --branch main --commit "$EXPECTED_MAIN_SHA" --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$main_run"
+          echo "main_ci_run_id=$main_run" >> "$GITHUB_ENV"
+
+      - name: Run the same CI-only generation and conformance path
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+          go fix -diff ./... > "$OUTPUT_DIR/go-fix.diff"
+          test ! -s "$OUTPUT_DIR/go-fix.diff"
+          gofmt -w $(git ls-files '*.go')
+          go build ./...
+          go vet ./...
+          go test ./...
+          scripts/conformance.sh "$OUTPUT_DIR"
+
+      - name: Refuse to rewrite an existing tag
+        run: |
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "tag already exists; immutable history will not be rewritten" >&2
+            exit 1
+          fi
+
+      - name: Create and push the annotated tag
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git tag -a "$RELEASE_TAG" "$EXPECTED_MAIN_SHA" -m "Gooo closed-loop self-improvement use case $RELEASE_TAG"
+          git push origin "refs/tags/$RELEASE_TAG"
+
+      - name: Assemble the release bundle in caller-owned output
+        run: |
+          bundle_dir="$OUTPUT_DIR/release-bundle"
+          mkdir -p "$bundle_dir/generated"
+          cp "$OUTPUT_DIR/evidence/"* "$bundle_dir/"
+          cp "$OUTPUT_DIR/generated/baseline.gooo" "$OUTPUT_DIR/generated/candidate.gooo" "$OUTPUT_DIR/generated/baseline.go" "$OUTPUT_DIR/generated/candidate.go" "$bundle_dir/generated/"
+          cp "$OUTPUT_DIR/replay-receipt.json" "$bundle_dir/"
+          tar -czf "$OUTPUT_DIR/$RELEASE_TAG.tar.gz" -C "$bundle_dir" .
+          echo "bundle_sha256=$(sha256sum "$OUTPUT_DIR/$RELEASE_TAG.tar.gz" | awk '{print $1}')" >> "$GITHUB_ENV"
+
+      - name: Create the draft release first
+        run: |
+          cat > "$OUTPUT_DIR/release-notes.md" <<EOF
+          # Gooo closed-loop self-improvement use case $RELEASE_TAG
+
+          Draft-first immutable annotated release for main commit $EXPECTED_MAIN_SHA.
+
+          Main CI run: $main_ci_run_id
+          Bundle SHA-256: $bundle_sha256
+
+          The generated candidate is not automatically adopted. The semantic pair is CLOSED for the bounded evidence contract; human adoption and performance/memory claims remain UNKNOWN.
+          EOF
+          gh release create "$RELEASE_TAG" "$OUTPUT_DIR/$RELEASE_TAG.tar.gz" --repo "$GITHUB_REPOSITORY" --draft --verify-tag --title "Gooo closed-loop self-improvement use case $RELEASE_TAG" --notes-file "$OUTPUT_DIR/release-notes.md"
+
+      - name: Verify the draft release before publication
+        run: |
+          draft="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          test "$(jq -r '.draft' <<<"$draft")" = true
+          test "$(jq -r '.tag_name' <<<"$draft")" = "$RELEASE_TAG"
+          test "$(jq -r '.target_commitish' <<<"$draft")" != ""
+          test "$(jq -r --arg name "$RELEASE_TAG.tar.gz" '.assets[] | select(.name == $name) | .digest' <<<"$draft")" = "sha256:$bundle_sha256"
+
+      - name: Publish the already-verified draft release
+        run: |
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -F draft=false -F make_latest=true >/dev/null
+
+      - name: Verify immutable annotated release identity
+        run: |
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          test "$(jq -r '.draft' <<<"$release")" = false
+          test "$(jq -r '.immutable' <<<"$release")" = true
+          test "$(jq -r '.tag_name' <<<"$release")" = "$RELEASE_TAG"
+          ref="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")"
+          test "$(jq -r '.object.type' <<<"$ref")" = tag
+          tag_object_sha="$(jq -r '.object.sha' <<<"$ref")"
+          test -n "$tag_object_sha"
+          tag_record="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object_sha")"
+          test "$(jq -r '.object.sha' <<<"$tag_record")" = "$EXPECTED_MAIN_SHA"
+          asset="$(jq -c --arg name "$RELEASE_TAG.tar.gz" '.assets[] | select(.name == $name)' <<<"$release")"
+          test "$(jq -r '.digest' <<<"$asset")" = "sha256:$bundle_sha256"
+          jq -n --argjson release "$release" --argjson main_ci_run_id "$main_ci_run_id" --arg bundle_sha256 "$bundle_sha256" --arg tag "$RELEASE_TAG" --arg merge_sha "$EXPECTED_MAIN_SHA" --arg tag_object_sha "$tag_object_sha" '{schema:"gooo/release-receipt/v1",release_id:$release.id,tag:$tag,merge_sha:$merge_sha,tag_object_sha:$tag_object_sha,immutable:$release.immutable,draft:$release.draft,main_ci_run_id:$main_ci_run_id,asset:([$release.assets[]|select(.name == ($tag+".tar.gz"))][0]),bundle_sha256:$bundle_sha256,operational_refuted_events:[]}' > "$OUTPUT_DIR/release-receipt.json"
+
+      - name: Upload release receipt and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-release-receipt-${{ github.run_id }}
+          path: ${{ runner.temp }}/gooo-release-${{ github.run_id }}
+          if-no-files-found: error

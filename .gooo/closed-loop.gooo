@@ -1,0 +1,26 @@
+gooo feedback_coverage_decision_loop v1
+
+semantic_owner owner=gooo
+decision closed_value=FIXED_POINT unknown_policy=FAIL_CLOSED unknown_code=FEEDBACK_COVERAGE_DECISION_UNKNOWN
+precedence order=REFUTED>UNKNOWN>CLOSED
+unknown_fields fields=stage,step,reason,unknown_class,next_operation,blocked_by
+authority repository_writes=0 remote_writes=0 apply_authority=0 commit_authority=0 merge_authority=0 tag_authority=0 release_authority=0 local_test_executions=0 cross_project_required_gates=0
+output boundary=caller_owned_temp_only repository_writes=0
+toolchain go=1.27.x generator=gooo-loopgen@v0.1.0 evaluator=feedback-coverage-decision-evaluator@v0.1.0
+baseline bug=UNKNOWN_TOP_LEVEL_DEFAULTS_TO_FIXED_POINT
+counterexample fixture=fixtures/unknown-top-level.json top_level_value=MAYBE expected=FEEDBACK_COVERAGE_DECISION_UNKNOWN
+
+# The activity graph is deliberately fixed before implementation: 12 activities,
+# 4 FOUNDATION, 4 COHERENCE, 4 REGRESSION; and 4 DRIVER, 4 OUTCOME, 4 GUARDRAIL.
+activity ordinal=1 id=PIN_BASELINE_BEHAVIOR stage=FOUNDATION step=pin-baseline proof_choice=FOUNDATION indicator_class=DRIVER depends_on=-
+activity ordinal=2 id=DECLARE_FAIL_CLOSED_DECISION stage=FOUNDATION step=declare-fail-closed-decision proof_choice=FOUNDATION indicator_class=OUTCOME depends_on=PIN_BASELINE_BEHAVIOR
+activity ordinal=3 id=DECLARE_UNKNOWN_RECORD stage=FOUNDATION step=declare-six-field-unknown-record proof_choice=FOUNDATION indicator_class=GUARDRAIL depends_on=DECLARE_FAIL_CLOSED_DECISION
+activity ordinal=4 id=DECLARE_CALLER_OUTPUT_BOUNDARY stage=FOUNDATION step=declare-caller-output-boundary proof_choice=FOUNDATION indicator_class=DRIVER depends_on=DECLARE_UNKNOWN_RECORD
+activity ordinal=5 id=GENERATE_SEMANTIC_IR stage=COHERENCE step=generate-semantic-ir proof_choice=COHERENCE indicator_class=DRIVER depends_on=DECLARE_CALLER_OUTPUT_BOUNDARY
+activity ordinal=6 id=GENERATE_BASELINE_ARTIFACT stage=COHERENCE step=generate-pinned-baseline proof_choice=COHERENCE indicator_class=OUTCOME depends_on=GENERATE_SEMANTIC_IR
+activity ordinal=7 id=GENERATE_CANDIDATE_ARTIFACT stage=COHERENCE step=generate-fail-closed-candidate proof_choice=COHERENCE indicator_class=GUARDRAIL depends_on=GENERATE_BASELINE_ARTIFACT
+activity ordinal=8 id=COMPARE_IDENTICAL_CONTEXT stage=COHERENCE step=compare-identical-context proof_choice=COHERENCE indicator_class=DRIVER depends_on=GENERATE_CANDIDATE_ARTIFACT
+activity ordinal=9 id=MINIMIZE_COUNTEREXAMPLE stage=REGRESSION step=minimize-unknown-top-level-counterexample proof_choice=REGRESSION indicator_class=OUTCOME depends_on=COMPARE_IDENTICAL_CONTEXT
+activity ordinal=10 id=REPLAY_CANDIDATE_OUTPUT stage=REGRESSION step=replay-candidate-output proof_choice=REGRESSION indicator_class=GUARDRAIL depends_on=MINIMIZE_COUNTEREXAMPLE
+activity ordinal=11 id=VERIFY_ZERO_AUTHORITY stage=REGRESSION step=verify-zero-runtime-authority proof_choice=REGRESSION indicator_class=OUTCOME depends_on=REPLAY_CANDIDATE_OUTPUT
+activity ordinal=12 id=REQUIRE_HUMAN_ADOPTION stage=REGRESSION step=hold-human-adoption-boundary proof_choice=REGRESSION indicator_class=GUARDRAIL depends_on=VERIFY_ZERO_AUTHORITY
