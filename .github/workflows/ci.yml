@@ -33,8 +33,8 @@ jobs:
 
       - name: Format the checked-out Go sources in Actions
         run: |
-          gofmt -w $(rg --files -g '*.go')
-          test -z "$(gofmt -l $(rg --files -g '*.go'))"
+          gofmt -w $(git ls-files '*.go')
+          test -z "$(gofmt -l $(git ls-files '*.go'))"
 
       - name: Build
         run: go build ./...
