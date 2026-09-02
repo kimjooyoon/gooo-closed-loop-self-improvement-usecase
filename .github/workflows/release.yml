@@ -92,9 +92,11 @@ jobs:
           Bundle SHA-256: $bundle_sha256
 
           The generated candidate is not automatically adopted. The semantic pair is CLOSED for the bounded evidence contract; human adoption and performance/memory claims remain UNKNOWN.
+
+          OPERATIONAL_REFUTED: release-plumbing correction was pushed directly to main at 55e98607410c478a4b17035005449a768b0420e4 after PR #1; main CI run 33578930068. This historical process deviation is preserved and is not rewritten.
           EOF
           gh release create "$RELEASE_TAG" "$OUTPUT_DIR/$RELEASE_TAG.tar.gz" --repo "$GITHUB_REPOSITORY" --draft --verify-tag --title "Gooo closed-loop self-improvement use case $RELEASE_TAG" --notes-file "$OUTPUT_DIR/release-notes.md"
-          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate | jq -r --arg tag "$RELEASE_TAG" '.[] | select(.tag_name == $tag) | .id' | head -n 1)"
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" | jq -r --arg tag "$RELEASE_TAG" 'first(.[] | select(.tag_name == $tag)) | .id')"
           test -n "$release_id"
           echo "release_id=$release_id" >> "$GITHUB_ENV"
 
@@ -124,7 +126,7 @@ jobs:
           test "$(jq -r '.object.sha' <<<"$tag_record")" = "$EXPECTED_MAIN_SHA"
           asset="$(jq -c --arg name "$RELEASE_TAG.tar.gz" '.assets[] | select(.name == $name)' <<<"$release")"
           test "$(jq -r '.digest' <<<"$asset")" = "sha256:$bundle_sha256"
-          jq -n --argjson release "$release" --argjson main_ci_run_id "$main_ci_run_id" --arg bundle_sha256 "$bundle_sha256" --arg tag "$RELEASE_TAG" --arg merge_sha "$EXPECTED_MAIN_SHA" --arg tag_object_sha "$tag_object_sha" '{schema:"gooo/release-receipt/v1",release_id:$release.id,tag:$tag,merge_sha:$merge_sha,tag_object_sha:$tag_object_sha,immutable:$release.immutable,draft:$release.draft,main_ci_run_id:$main_ci_run_id,asset:([$release.assets[]|select(.name == ($tag+".tar.gz"))][0]),bundle_sha256:$bundle_sha256,operational_refuted_events:[]}' > "$OUTPUT_DIR/release-receipt.json"
+          jq -n --argjson release "$release" --argjson main_ci_run_id "$main_ci_run_id" --arg bundle_sha256 "$bundle_sha256" --arg tag "$RELEASE_TAG" --arg merge_sha "$EXPECTED_MAIN_SHA" --arg tag_object_sha "$tag_object_sha" --arg op_commit "55e98607410c478a4b17035005449a768b0420e4" --arg op_run "33578930068" '{schema:"gooo/release-receipt/v1",release_id:$release.id,tag:$tag,merge_sha:$merge_sha,tag_object_sha:$tag_object_sha,immutable:$release.immutable,draft:$release.draft,main_ci_run_id:$main_ci_run_id,asset:([$release.assets[]|select(.name == ($tag+".tar.gz"))][0]),bundle_sha256:$bundle_sha256,operational_refuted_events:[{kind:"DIRECT_MAIN_RELEASE_PLUMBING_CHANGE",commit_sha:$op_commit,main_ci_run_id:$op_run,reason:"DRAFT_RELEASE_LOOKUP_CORRECTION_PUSHED_DIRECTLY_TO_MAIN_BEFORE_PR_FIRST_INSTRUCTION"}]}' > "$OUTPUT_DIR/release-receipt.json"
 
       - name: Upload release receipt and evidence
         if: always()
