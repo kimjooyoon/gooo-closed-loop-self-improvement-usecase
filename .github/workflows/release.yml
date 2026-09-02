@@ -94,10 +94,13 @@ jobs:
           The generated candidate is not automatically adopted. The semantic pair is CLOSED for the bounded evidence contract; human adoption and performance/memory claims remain UNKNOWN.
           EOF
           gh release create "$RELEASE_TAG" "$OUTPUT_DIR/$RELEASE_TAG.tar.gz" --repo "$GITHUB_REPOSITORY" --draft --verify-tag --title "Gooo closed-loop self-improvement use case $RELEASE_TAG" --notes-file "$OUTPUT_DIR/release-notes.md"
+          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate | jq -r --arg tag "$RELEASE_TAG" '.[] | select(.tag_name == $tag) | .id' | head -n 1)"
+          test -n "$release_id"
+          echo "release_id=$release_id" >> "$GITHUB_ENV"
 
       - name: Verify the draft release before publication
         run: |
-          draft="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          draft="$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id")"
           test "$(jq -r '.draft' <<<"$draft")" = true
           test "$(jq -r '.tag_name' <<<"$draft")" = "$RELEASE_TAG"
           test "$(jq -r '.target_commitish' <<<"$draft")" != ""
@@ -105,12 +108,11 @@ jobs:
 
       - name: Publish the already-verified draft release
         run: |
-          release_id="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.id')"
           gh api --method PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" -F draft=false -F make_latest=true >/dev/null
 
       - name: Verify immutable annotated release identity
         run: |
-          release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases/$release_id")"
           test "$(jq -r '.draft' <<<"$release")" = false
           test "$(jq -r '.immutable' <<<"$release")" = true
           test "$(jq -r '.tag_name' <<<"$release")" = "$RELEASE_TAG"
