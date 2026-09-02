@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      OUTPUT_DIR: ${{ runner.temp }}/gooo-loop-${{ github.run_id }}
+    steps:
+      - name: Check out the submitted revision
+        uses: actions/checkout@v5
+
+      - name: Install Go 1.27.x
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.x'
+          cache: true
+
+      - name: Run go fix in check mode
+        run: |
+          mkdir -p "$OUTPUT_DIR"
+          go fix -diff ./... > "$OUTPUT_DIR/go-fix.diff"
+          test ! -s "$OUTPUT_DIR/go-fix.diff"
+
+      - name: Format the checked-out Go sources in Actions
+        run: |
+          gofmt -w $(rg --files -g '*.go')
+          test -z "$(gofmt -l $(rg --files -g '*.go'))"
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Run generation, conformance, replay, and measurements
+        run: scripts/conformance.sh "$OUTPUT_DIR"
+
+      - name: Upload caller-owned evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-loop-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/gooo-loop-${{ github.run_id }}
+          if-no-files-found: error
