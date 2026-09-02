@@ -12,8 +12,6 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    env:
-      OUTPUT_DIR: ${{ runner.temp }}/gooo-loop-${{ github.run_id }}
     steps:
       - name: Check out the submitted revision
         uses: actions/checkout@v5
@@ -23,6 +21,9 @@ jobs:
         with:
           go-version: '1.27.x'
           cache: true
+
+      - name: Prepare caller-owned temporary output
+        run: echo "OUTPUT_DIR=$RUNNER_TEMP/gooo-loop-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Run go fix in check mode
         run: |

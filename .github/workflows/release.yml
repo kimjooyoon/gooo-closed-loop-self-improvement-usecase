@@ -18,7 +18,6 @@ jobs:
   draft-first-publish:
     runs-on: ubuntu-latest
     env:
-      OUTPUT_DIR: ${{ runner.temp }}/gooo-release-${{ github.run_id }}
       RELEASE_TAG: ${{ inputs.tag }}
       EXPECTED_MAIN_SHA: ${{ inputs.expected_main_sha }}
       GH_TOKEN: ${{ github.token }}
@@ -33,6 +32,9 @@ jobs:
         with:
           go-version: '1.27.x'
           cache: true
+
+      - name: Prepare caller-owned temporary output
+        run: echo "OUTPUT_DIR=$RUNNER_TEMP/gooo-release-$GITHUB_RUN_ID" >> "$GITHUB_ENV"
 
       - name: Require successful main CI for this exact commit
         run: |
