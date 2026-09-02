@@ -12,6 +12,8 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check out the submitted revision
         uses: actions/checkout@v5
